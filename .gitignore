@@ -1,0 +1,22 @@
+# Ignore dependencies
+node_modules/
+.venv/
+env/
+venv/
+ENV/
+
+# Ignore Python cache
+__pycache__/
+*.py[cod]
+
+# Ignore IDE settings
+.vscode/
+.idea/
+
+# Ignore OS junk
+.DS_Store
+Thumbs.db
+
+# Ignore build outputs
+dist/
+build/

@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>G-MAD — Multi-Agent Debate Tool</title>
+    <meta name="description" content="G-MAD: A tool that finds logic errors in software transcripts using multi-agent debate." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+        /* ── Reset ── */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ── Design Tokens ── */
+        :root {
+            --bg:          #0a0a0a;
+            --surface:     #111111;
+            --border:      #1e293b;
+            --text:        #d4d4d8;
+            --text-muted:  #71717a;
+            --text-dim:    #52525b;
+            --accent:      #3b82f6;
+            --accent-dim:  rgba(59, 130, 246, 0.12);
+            --font-sans:   'Inter', -apple-system, sans-serif;
+            --font-mono:   'JetBrains Mono', 'Consolas', monospace;
+        }
+
+        /* ── Base ── */
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            font-size: 14px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Layout Shell ── */
+        .shell {
+            display: grid;
+            grid-template-rows: 48px 1fr;
+            height: 100vh;
+        }
+
+        /* ── Top Bar ── */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .logo {
+            font-family: var(--font-mono);
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--accent);
+            letter-spacing: -0.5px;
+        }
+        .topbar-sep {
+            width: 1px;
+            height: 18px;
+            background: var(--border);
+        }
+        .topbar-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            letter-spacing: 0.02em;
+        }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .topbar-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-family: var(--font-sans);
+            font-size: 12px;
+            padding: 5px 12px;
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .topbar-btn:hover {
+            border-color: var(--text-dim);
+            color: var(--text);
+        }
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+        }
+        .status-text {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-dim);
+        }
+
+        /* ── Main Area ── */
+        .workspace {
+            display: grid;
+            grid-template-columns: 300px 1fr 1fr;
+            grid-template-rows: 1fr auto;
+            overflow: hidden;
+        }
+
+        /* ── Panels ── */
+        .panel {
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .panel:last-of-type {
+            border-right: none;
+        }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            flex-shrink: 0;
+        }
+        .panel-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+        .panel-meta {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-dim);
+        }
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        .panel-body::-webkit-scrollbar {
+            width: 4px;
+        }
+        .panel-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .panel-body::-webkit-scrollbar-thumb {
+            background: var(--border);
+        }
+
+        /* ── Query Panel (Left) ── */
+        .query-section {
+            margin-bottom: 20px;
+        }
+        .query-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 8px;
+        }
+        .query-text {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text);
+            padding: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+        }
+        .config-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .config-row:last-child {
+            border-bottom: none;
+        }
+        .config-key {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+        .config-val {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text);
+        }
+        .run-btn {
+            width: 100%;
+            padding: 10px;
+            margin-top: 16px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            font-family: var(--font-sans);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .run-btn:hover {
+            opacity: 0.85;
+        }
+        .run-btn[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ── Agent Messages ── */
+        .msg {
+            margin-bottom: 14px;
+            padding: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text);
+        }
+        .msg-label {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--accent);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .msg-cite {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--accent);
+            opacity: 0.7;
+        }
+
+        /* ── Confidence Bar ── */
+        .confidence {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+            flex-shrink: 0;
+        }
+        .confidence-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .confidence-label {
+            font-size: 10px;
+            font-family: var(--font-mono);
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .confidence-val {
+            font-size: 12px;
+            font-family: var(--font-mono);
+            font-weight: 500;
+            color: var(--text);
+        }
+        .bar-track {
+            width: 100%;
+            height: 3px;
+            background: var(--border);
+        }
+        .bar-fill {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        /* ── Consensus Footer ── */
+        .consensus {
+            grid-column: 1 / -1;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            max-height: 220px;
+        }
+        .consensus::-webkit-scrollbar {
+            width: 4px;
+        }
+        .consensus::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .consensus::-webkit-scrollbar-thumb {
+            background: var(--border);
+        }
+        .consensus-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .consensus-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+        .consensus-stats {
+            display: flex;
+            gap: 20px;
+        }
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .stat-key {
+            font-size: 10px;
+            font-family: var(--font-mono);
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+        .stat-val {
+            font-size: 12px;
+            font-family: var(--font-mono);
+            color: var(--text);
+        }
+        .consensus-body {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text);
+        }
+        .consensus-body .ref {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--accent);
+            opacity: 0.7;
+        }
+        .consensus-footer-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        /* ── Proof of Logic Section ── */
+        .proof-section {
+            margin-top: 20px;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+        }
+        .proof-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+        .proof-metric {
+            padding: 10px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+        .proof-metric-text {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text);
+            line-height: 1.5;
+        }
+        .plantuml-preview {
+            padding: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            line-height: 1.5;
+            color: var(--text-dim);
+            white-space: pre;
+            overflow-x: auto;
+        }
+        .plantuml-preview::-webkit-scrollbar {
+            height: 4px;
+        }
+        .plantuml-preview::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .plantuml-preview::-webkit-scrollbar-thumb {
+            background: var(--border);
+        }
+
+        /* ── Active state indicator ── */
+        .active-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="shell">
+
+        <!-- ── Top Bar ── -->
+        <header class="topbar" id="topbar">
+            <div class="topbar-left">
+                <span class="logo">G-MAD</span>
+                <div class="topbar-sep"></div>
+                <span class="topbar-label">Multi-Agent Debate Tool</span>
+            </div>
+            <div class="topbar-right">
+                <div class="status-dot"></div>
+                <span class="status-text">Ollama connected</span>
+                <div class="topbar-sep"></div>
+                <button class="topbar-btn" id="btn-docs">Docs</button>
+                <button class="topbar-btn" id="btn-settings">Settings</button>
+            </div>
+        </header>
+
+        <!-- ── 3-Column Workspace ── -->
+        <div class="workspace">
+
+            <!-- ── Left Panel: Query ── -->
+            <div class="panel" id="panel-query">
+                <div class="panel-header">
+                    <span class="panel-title">Query Input</span>
+                    <span class="panel-meta">intent: technical</span>
+                </div>
+                <div class="panel-body">
+                    <div class="query-section">
+                        <div class="query-label">Requirement under analysis</div>
+                        <div class="query-text">
+                            Client wants a secure login page for a medical app. Analyze the requirement for contradictions, missing edge cases, and security gaps.
+                        </div>
+                    </div>
+
+                    <div class="query-section">
+                        <div class="query-label">Debate configuration</div>
+                        <div class="config-row">
+                            <span class="config-key">Agent 1 role</span>
+                            <span class="config-val">Business Analyst</span>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-key">Agent 2 role</span>
+                            <span class="config-val">Software Architect</span>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-key">Model</span>
+                            <span class="config-val">llama3</span>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-key">RAG source</span>
+                            <span class="config-val">chroma_db (2 docs)</span>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-key">Max rounds</span>
+                            <span class="config-val">6</span>
+                        </div>
+                    </div>
+
+                    <button class="run-btn" id="btn-run-debate">Run debate</button>
+
+                    <!-- ── Proof of Logic ── -->
+                    <div class="proof-section">
+                        <div class="proof-label">Proof of logic</div>
+                        <div class="proof-metric">
+                            <div class="proof-metric-text">
+                                Consensus reached in 4 iterations.<br />
+                                3 security contradictions resolved.<br />
+                                1 unresolved edge case flagged.
+                            </div>
+                        </div>
+                        <div class="proof-label" style="margin-top: 12px;">PlantUML output (live preview)</div>
+                        <div class="plantuml-preview" id="plantuml-output">@startuml
+actor User
+participant "Login Page" as LP
+participant "Auth Service" as Auth
+participant "MFA Module" as MFA
+
+User -> LP : Enter credentials
+LP -> Auth : POST /auth/login
+Auth -> Auth : Validate input
+alt Valid credentials
+    Auth -> MFA : Request 2FA token
+    MFA -> User : Send OTP
+    User -> LP : Enter OTP
+    LP -> Auth : POST /auth/verify
+    Auth -> User : 200 OK + session
+else Invalid credentials
+    Auth -> LP : 401 Unauthorized
+    LP -> User : Show error (generic)
+end
+@enduml</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Center Panel: Agent 1 (Business Analyst) ── -->
+            <div class="panel" id="panel-agent1">
+                <div class="panel-header">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div class="active-indicator"></div>
+                        <span class="panel-title">Agent 1 — Business Analyst</span>
+                    </div>
+                    <span class="panel-meta">3 responses</span>
+                </div>
+                <div class="panel-body">
+                    <div class="msg">
+                        <div class="msg-label">Round 1 — Feature suggestions</div>
+                        The login page should support email/password authentication with a "Remember Me" option. For a medical app, we need HIPAA-compliant session timeouts (15 min idle). Password requirements: minimum 12 characters, mixed case, at least one special character. Consider adding biometric login for mobile users.
+                    </div>
+                    <div class="msg">
+                        <div class="msg-label">Round 2 — Responding to critique</div>
+                        Good point on the brute-force vector. I'll add: account lockout after 5 failed attempts with exponential backoff. The "Remember Me" feature should use a secure, rotating refresh token — not a persistent session. Agreed that the password policy should also block known-compromised passwords via a breach database check.
+                    </div>
+                    <div class="msg">
+                        <div class="msg-label">Round 3 — Final position</div>
+                        Updated requirements: MFA is mandatory (not optional). Session tokens must be short-lived (15 min) with server-side invalidation. The login error message must be generic ("Invalid credentials") to prevent user enumeration. Added rate limiting at the API gateway level.
+                    </div>
+                </div>
+                <div class="confidence">
+                    <div class="confidence-row">
+                        <span class="confidence-label">Confidence</span>
+                        <span class="confidence-val">84%</span>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: 84%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Right Panel: Agent 2 (Software Architect) ── -->
+            <div class="panel" id="panel-agent2">
+                <div class="panel-header">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div class="active-indicator"></div>
+                        <span class="panel-title">Agent 2 — Software Architect</span>
+                    </div>
+                    <span class="panel-meta">3 responses</span>
+                </div>
+                <div class="panel-body">
+                    <div class="msg">
+                        <div class="msg-label">Round 1 — Security review</div>
+                        The Analyst omitted brute-force protection entirely. "Remember Me" as described is a session-hijacking risk in a medical context. The password policy is adequate but should also cross-reference HaveIBeenPwned. More critically: there is no mention of MFA, which is a baseline requirement for any app handling PHI.
+                    </div>
+                    <div class="msg">
+                        <div class="msg-label">Round 2 — Architecture constraints</div>
+                        Exponential backoff is correct. However, the refresh token rotation must be paired with server-side token invalidation — client-side only is insufficient. I'd also flag: the original requirement says nothing about API rate limiting, which leaves the auth endpoint open to credential-stuffing attacks. This is a gap in the source document itself. <span class="msg-cite">[grounding: IEEE-2025-security-patterns.pdf]</span>
+                    </div>
+                    <div class="msg">
+                        <div class="msg-label">Round 3 — Consensus position</div>
+                        We now agree on the core controls. The remaining open item: the original requirement does not specify whether the app needs offline login capability (relevant for field medical staff). This should be escalated to the client as an unanswered question, not assumed either way.
+                    </div>
+                </div>
+                <div class="confidence">
+                    <div class="confidence-row">
+                        <span class="confidence-label">Confidence</span>
+                        <span class="confidence-val">78%</span>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: 78%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Bottom: Consensus Judge ── -->
+            <div class="consensus" id="panel-consensus">
+                <div class="consensus-header">
+                    <span class="consensus-title">Consensus Judge</span>
+                    <div class="consensus-stats">
+                        <div class="stat">
+                            <span class="stat-key">Rounds</span>
+                            <span class="stat-val">4</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-key">Contradictions found</span>
+                            <span class="stat-val">3</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-key">Resolved</span>
+                            <span class="stat-val">3 / 3</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-key">Open items</span>
+                            <span class="stat-val">1</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="consensus-body">
+                    Both agents agree on the following controls for the medical app login: mandatory MFA,
+                    HIPAA-compliant 15-minute session timeout with server-side invalidation, generic error messages
+                    to prevent user enumeration, exponential-backoff account lockout, and API-level rate limiting.
+                    The password policy includes a 12-character minimum with breach-database cross-referencing
+                    <span class="ref">[grounding: IEEE-2025-security-patterns.pdf]</span>.
+                    One unresolved item remains: the source requirement does not specify offline login capability
+                    for field medical staff. This has been flagged for client clarification.
+                </div>
+                <div class="consensus-footer-row">
+                    <span>Synthesized from 2 agents, 4 debate rounds, and 2 RAG-grounded sources.</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+
+</html>
