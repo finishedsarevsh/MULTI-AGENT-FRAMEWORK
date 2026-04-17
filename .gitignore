@@ -20,3 +20,13 @@ Thumbs.db
 # Ignore build outputs
 dist/
 build/
+
+# Ignore the Python environment
+venv312/
+
+# Ignore the React dependencies and builds
+dashboard/node_modules/
+dashboard/dist/
+
+# Ignore the database (we generate this locally)
+chroma_db/
