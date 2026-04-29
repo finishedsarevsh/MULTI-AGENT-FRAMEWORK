@@ -1,18 +1,46 @@
 @import "tailwindcss";
 
-/* ── Clinical Design Tokens ── */
+/* ── Clinical Design Tokens — Dark Mode (default) ── */
 @theme {
-  --color-bg: #0A0A0A;
-  --color-surface: #111111;
+  /* 3-tier surface system: 4–6% luminance steps */
+  --color-bg: #08090A;
+  --color-surface: #111214;
+  --color-surface-raised: #1A1B1F;
+
   --color-border: #1F2937;
+  --color-border-subtle: #161B22;
+
+  /* Text hierarchy */
   --color-text: #D4D4D8;
   --color-text-muted: #71717A;
   --color-text-dim: #52525B;
+
+  /* Primary accent — reserved for interactive / agent headers */
   --color-accent-blue: #3B82F6;
   --color-accent-emerald: #10B981;
-  --color-accent-blue-dim: rgba(59, 130, 246, 0.12);
-  --color-accent-emerald-dim: rgba(16, 185, 129, 0.12);
+  --color-accent-blue-dim: rgba(59, 130, 246, 0.10);
+  --color-accent-emerald-dim: rgba(16, 185, 129, 0.10);
 
+  /* Semantic colors */
+  --color-semantic-success: #22C55E;
+  --color-semantic-success-dim: rgba(34, 197, 94, 0.10);
+  --color-semantic-danger: #EF4444;
+  --color-semantic-danger-dim: rgba(239, 68, 68, 0.10);
+  --color-semantic-warning: #F59E0B;
+  --color-semantic-warning-dim: rgba(245, 158, 11, 0.10);
+  --color-semantic-info: #38BDF8;
+  --color-semantic-info-dim: rgba(56, 189, 248, 0.08);
+
+  /* Verdict banner */
+  --color-verdict-bg: rgba(147, 112, 219, 0.06);
+  --color-verdict-border: rgba(147, 112, 219, 0.18);
+  --color-verdict-accent: #A78BFA;
+
+  /* Consensus card */
+  --color-consensus-bg: rgba(56, 189, 248, 0.04);
+  --color-consensus-border: rgba(56, 189, 248, 0.12);
+
+  /* Typography */
   --font-sans: 'Inter', -apple-system, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Consolas', monospace;
 }
@@ -36,6 +64,30 @@ html, body, #root {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Light mode overrides ── */
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg: #F8F9FA;
+    --color-surface: #FFFFFF;
+    --color-surface-raised: #F0F1F3;
+    --color-border: #D1D5DB;
+    --color-border-subtle: #E5E7EB;
+    --color-text: #1F2937;
+    --color-text-muted: #6B7280;
+    --color-text-dim: #9CA3AF;
+    --color-accent-blue-dim: rgba(59, 130, 246, 0.08);
+    --color-accent-emerald-dim: rgba(16, 185, 129, 0.08);
+    --color-semantic-success-dim: rgba(34, 197, 94, 0.08);
+    --color-semantic-danger-dim: rgba(239, 68, 68, 0.08);
+    --color-semantic-warning-dim: rgba(245, 158, 11, 0.08);
+    --color-semantic-info-dim: rgba(56, 189, 248, 0.06);
+    --color-verdict-bg: rgba(147, 112, 219, 0.05);
+    --color-verdict-border: rgba(147, 112, 219, 0.15);
+    --color-consensus-bg: rgba(56, 189, 248, 0.03);
+    --color-consensus-border: rgba(56, 189, 248, 0.10);
+  }
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar {
   width: 4px;
@@ -46,10 +98,30 @@ html, body, #root {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
+  border-radius: 2px;
 }
 
 /* ── Selection ── */
 ::selection {
   background: rgba(59, 130, 246, 0.3);
   color: #fff;
+}
+
+/* ── Smooth scroll for round navigation ── */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+/* ── Collapsible drawer animation ── */
+.drawer-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.25s ease;
+}
+.drawer-content.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+.drawer-content.expanded {
+  max-height: 2000px;
+  opacity: 1;
 }

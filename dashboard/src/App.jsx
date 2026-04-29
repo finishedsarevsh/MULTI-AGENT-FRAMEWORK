@@ -83,15 +83,15 @@ function Topbar() {
         </span>
       </div>
       <div className="flex items-center gap-3">
-        <div className="w-[7px] h-[7px] rounded-full bg-emerald-500" />
+        <div className="w-[7px] h-[7px] rounded-full bg-semantic-success animate-pulse" />
         <span className="font-mono text-[11px] text-text-dim">Ollama connected</span>
         <div className="w-px h-[18px] bg-border" />
-        <button className="px-3 py-1 text-[12px] text-text-muted border border-border
+        <button className="px-3 py-1 text-[12px] text-text-muted border border-border rounded-md
                            hover:border-text-dim hover:text-text cursor-pointer transition-colors">
           <FileText size={12} strokeWidth={1.5} className="inline mr-1.5 -mt-px" />
           Docs
         </button>
-        <button className="px-3 py-1 text-[12px] text-text-muted border border-border
+        <button className="px-3 py-1 text-[12px] text-text-muted border border-border rounded-md
                            hover:border-text-dim hover:text-text cursor-pointer transition-colors">
           <Settings size={12} strokeWidth={1.5} className="inline mr-1.5 -mt-px" />
           Settings
@@ -174,13 +174,27 @@ export default function App() {
       <Topbar />
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar — fixed 220px */}
+        {/* Sidebar — navigation only, deepest surface */}
         <div className="w-[220px] shrink-0">
           <Sidebar onNewDebate={resetDebate} isDebating={isDebating} />
         </div>
 
         {/* Main workspace */}
         <div className="flex-1 flex flex-col overflow-hidden">
+          {/* ── Consensus Judge — pinned at top of workspace ── */}
+          <ConsensusJudge
+            verdict={VERDICT_TEXT}
+            stats={{
+              Rounds: '4',
+              'Contradictions found': '3',
+              'Contradictions resolved': '3 / 3',
+              'Open items': '1',
+            }}
+            isVisible={debateComplete}
+            plantuml={PLANTUML_CODE}
+          />
+
+          {/* ── Agent workspace ── */}
           <div className="flex-1 flex overflow-hidden">
             {/* Query Panel — 280px */}
             <div className="w-[280px] shrink-0">
@@ -194,7 +208,7 @@ export default function App() {
               />
             </div>
 
-            {/* Agent 1 */}
+            {/* Agent 1 — equal-width flex column */}
             <div className="flex-1 min-w-0">
               <AgentCard
                 agentName="Agent 1"
@@ -206,7 +220,7 @@ export default function App() {
               />
             </div>
 
-            {/* Agent 2 */}
+            {/* Agent 2 — equal-width flex column */}
             <div className="flex-1 min-w-0">
               <AgentCard
                 agentName="Agent 2"
@@ -219,18 +233,6 @@ export default function App() {
               />
             </div>
           </div>
-
-          {/* Consensus Judge Footer */}
-          <ConsensusJudge
-            verdict={VERDICT_TEXT}
-            stats={{
-              Rounds: '4',
-              Contradictions: '3',
-              Resolved: '3 / 3',
-              'Open items': '1',
-            }}
-            isVisible={debateComplete}
-          />
         </div>
       </div>
     </div>

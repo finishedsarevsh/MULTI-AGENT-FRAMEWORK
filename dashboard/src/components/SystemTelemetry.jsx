@@ -5,6 +5,19 @@ function jitter(base, range) {
   return base + Math.floor(Math.random() * range * 2) - range
 }
 
+/* ── Metric Chip — readable key/value at 12–13px ── */
+function MetricChip({ icon: Icon, label, value, iconColor }) {
+  return (
+    <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-surface-raised border border-border-subtle">
+      <Icon size={13} strokeWidth={2} className={iconColor} />
+      <span className="text-[12px] text-text-dim font-medium">{label}</span>
+      <span className="text-[13px] text-text font-semibold font-mono tabular-nums">
+        {value}
+      </span>
+    </div>
+  )
+}
+
 const SystemTelemetry = memo(function SystemTelemetry() {
   const [tokens, setTokens] = useState(1024)
   const [latency, setLatency] = useState(42)
@@ -18,31 +31,25 @@ const SystemTelemetry = memo(function SystemTelemetry() {
   }, [])
 
   return (
-    <div className="flex items-center gap-3 border-l border-border pl-3">
-      {/* VRAM */}
-      <div className="flex items-center gap-1.5">
-        <Cpu size={10} strokeWidth={2} className="text-accent-blue" />
-        <span className="font-mono text-[10px] text-text-dim">VRAM</span>
-        <span className="font-mono text-[10px] text-text-muted">4.2 / 12 GB</span>
-      </div>
-
-      {/* Tokens */}
-      <div className="flex items-center gap-1.5">
-        <Zap size={10} strokeWidth={2} className="text-accent-emerald" />
-        <span className="font-mono text-[10px] text-text-dim">TOK</span>
-        <span className="font-mono text-[10px] text-text-muted tabular-nums">
-          {tokens.toLocaleString()} / 8k
-        </span>
-      </div>
-
-      {/* Latency */}
-      <div className="flex items-center gap-1.5">
-        <Activity size={10} strokeWidth={2} className="text-amber-500" />
-        <span className="font-mono text-[10px] text-text-dim">LAT</span>
-        <span className="font-mono text-[10px] text-text-muted tabular-nums">
-          {latency}ms
-        </span>
-      </div>
+    <div className="flex items-center gap-2">
+      <MetricChip
+        icon={Cpu}
+        label="VRAM"
+        value="4.2 / 12 GB"
+        iconColor="text-accent-blue"
+      />
+      <MetricChip
+        icon={Zap}
+        label="Tokens"
+        value={`${tokens.toLocaleString()} / 8k`}
+        iconColor="text-accent-emerald"
+      />
+      <MetricChip
+        icon={Activity}
+        label="Latency"
+        value={`${latency}ms`}
+        iconColor="text-semantic-warning"
+      />
     </div>
   )
 })
