@@ -9,7 +9,7 @@ const navItems = [
 
 export default function Sidebar({ onNewDebate, isDebating }) {
   return (
-    <aside className="h-full flex flex-col border-r border-border bg-surface">
+    <aside className="h-full flex flex-col bg-bg border-r border-border">
       {/* Header */}
       <div className="px-5 pt-5 pb-4">
         <h2 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-muted">
@@ -26,7 +26,7 @@ export default function Sidebar({ onNewDebate, isDebating }) {
           <a
             key={label}
             href="#"
-            className={`flex items-center gap-3 px-3 py-2.5 text-[13px] transition-colors duration-150
+            className={`flex items-center gap-3 px-3 py-2.5 text-[13px] rounded-md transition-colors duration-150
               ${active
                 ? 'bg-accent-blue-dim text-accent-blue'
                 : 'text-text-dim hover:text-text-muted hover:bg-white/[0.03]'
@@ -43,7 +43,7 @@ export default function Sidebar({ onNewDebate, isDebating }) {
         <button
           onClick={onNewDebate}
           disabled={isDebating}
-          className="w-full py-2.5 bg-accent-blue text-white text-[13px] font-medium
+          className="w-full py-2.5 bg-accent-blue text-white text-[13px] font-medium rounded-md
                      flex items-center justify-center gap-2 cursor-pointer
                      hover:opacity-85 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
         >
