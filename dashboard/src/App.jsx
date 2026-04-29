@@ -1,9 +1,11 @@
-import { useState, useCallback } from 'react'
-import { Settings, FileText } from 'lucide-react'
+import { useState, useCallback, useRef } from 'react'
 import Sidebar from './components/Sidebar'
-import TranscriptInput from './components/TranscriptInput'
-import AgentCard from './components/AgentCard'
-import ConsensusJudge from './components/ConsensusJudge'
+import TopBar from './components/TopBar'
+import StatStrip from './components/StatStrip'
+import QueryBar from './components/QueryBar'
+import ConsensusVerdict from './components/ConsensusVerdict'
+import DebateLane from './components/DebateLane'
+import ConfigPanel from './components/ConfigPanel'
 
 /* ── Demo Data ── */
 const AGENT_1_MESSAGES = [
@@ -39,70 +41,10 @@ const AGENT_2_MESSAGES = [
 
 const VERDICT_TEXT = `Both agents agree on the following controls for the medical app login: mandatory MFA, HIPAA-compliant 15-minute session timeout with server-side invalidation, generic error messages to prevent user enumeration, exponential-backoff account lockout, and API-level rate limiting. The password policy includes a 12-character minimum with breach-database cross-referencing [grounding: IEEE-2025-security-patterns.pdf]. One unresolved item remains: the source requirement does not specify offline login capability for field medical staff. This has been flagged for client clarification.`
 
-const PLANTUML_CODE = `@startuml
-actor User
-participant "Login Page" as LP
-participant "Auth Service" as Auth
-participant "MFA Module" as MFA
-
-User -> LP : Enter credentials
-LP -> Auth : POST /auth/login
-Auth -> Auth : Validate input
-alt Valid credentials
-    Auth -> MFA : Request 2FA token
-    MFA -> User : Send OTP
-    User -> LP : Enter OTP
-    LP -> Auth : POST /auth/verify
-    Auth -> User : 200 OK + session
-else Invalid credentials
-    Auth -> LP : 401 Unauthorized
-    LP -> User : Show error (generic)
-end
-@enduml`
-
-const DEBATE_CONFIG = {
-  'Agent 1 role': 'Business Analyst',
-  'Agent 2 role': 'Software Architect',
-  'Model': 'llama3',
-  'RAG source': 'chroma_db (2 docs)',
-  'Max rounds': '6',
-  'intent': 'technical',
-}
-
-/* ── Topbar ── */
-function Topbar() {
-  return (
-    <header className="flex items-center justify-between px-5 h-12 border-b border-border bg-surface shrink-0">
-      <div className="flex items-center gap-4">
-        <span className="font-mono font-semibold text-[15px] text-accent-blue tracking-tight">
-          G-MAD
-        </span>
-        <div className="w-px h-[18px] bg-border" />
-        <span className="text-[12px] text-text-muted">
-          Multi-Agent Debate Tool
-        </span>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="w-[7px] h-[7px] rounded-full bg-semantic-success animate-pulse" />
-        <span className="font-mono text-[11px] text-text-dim">Ollama connected</span>
-        <div className="w-px h-[18px] bg-border" />
-        <button className="px-3 py-1 text-[12px] text-text-muted border border-border rounded-md
-                           hover:border-text-dim hover:text-text cursor-pointer transition-colors">
-          <FileText size={12} strokeWidth={1.5} className="inline mr-1.5 -mt-px" />
-          Docs
-        </button>
-        <button className="px-3 py-1 text-[12px] text-text-muted border border-border rounded-md
-                           hover:border-text-dim hover:text-text cursor-pointer transition-colors">
-          <Settings size={12} strokeWidth={1.5} className="inline mr-1.5 -mt-px" />
-          Settings
-        </button>
-      </div>
-    </header>
-  )
-}
-
 /* ── App ── */
 export default function App() {
+  const queryInputRef = useRef(null)
+
   const [query, setQuery] = useState(
     'Client wants a secure login page for a medical app. Analyze the requirement for contradictions, missing edge cases, and security gaps.'
   )
@@ -112,6 +54,19 @@ export default function App() {
   const [agent2Msgs, setAgent2Msgs] = useState([])
   const [agent1Score, setAgent1Score] = useState(0)
   const [agent2Score, setAgent2Score] = useState(0)
+  const [configOpen, setConfigOpen] = useState(false)
+
+  const [config, setConfig] = useState({
+    agent1Role: 'Business Analyst',
+    agent2Role: 'Software Architect',
+    model: 'llama3',
+    maxRounds: 3,
+    intent: 'technical',
+  })
+
+  const handleConfigChange = useCallback((key, value) => {
+    setConfig(prev => ({ ...prev, [key]: value }))
+  }, [])
 
   const runDebate = useCallback(() => {
     if (isDebating || !query.trim()) return
@@ -123,7 +78,6 @@ export default function App() {
     setAgent1Score(0)
     setAgent2Score(0)
 
-    // Simulate staggered message arrival
     AGENT_1_MESSAGES.forEach((msg, i) => {
       setTimeout(() => {
         setAgent1Msgs(prev => [...prev, msg])
@@ -138,7 +92,6 @@ export default function App() {
       }, (i + 1) * 1400)
     })
 
-    // Complete debate after all messages arrive
     const totalTime = Math.max(
       AGENT_1_MESSAGES.length * 1200,
       AGENT_2_MESSAGES.length * 1400
@@ -160,81 +113,80 @@ export default function App() {
     setAgent2Msgs([])
     setAgent1Score(0)
     setAgent2Score(0)
+    setTimeout(() => queryInputRef.current?.focus(), 50)
   }, [])
 
   const metrics = debateComplete ? {
     iterations: 4,
     contradictions: 3,
     openItems: 1,
-    plantuml: PLANTUML_CODE,
   } : null
 
   return (
-    <div className="h-screen flex flex-col bg-bg">
-      <Topbar />
+    <div className="h-screen flex bg-gmad-bg">
+      {/* ── Left Sidebar (220px) ── */}
+      <div className="w-[220px] shrink-0">
+        <Sidebar onNewDebate={resetDebate} isDebating={isDebating} />
+      </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar — navigation only, deepest surface */}
-        <div className="w-[220px] shrink-0">
-          <Sidebar onNewDebate={resetDebate} isDebating={isDebating} />
-        </div>
+      {/* ── Center Column (flex-1) ── */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <TopBar onToggleConfig={() => setConfigOpen(prev => !prev)} />
 
-        {/* Main workspace */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* ── Consensus Judge — pinned at top of workspace ── */}
-          <ConsensusJudge
-            verdict={VERDICT_TEXT}
-            stats={{
-              Rounds: '4',
-              'Contradictions found': '3',
-              'Contradictions resolved': '3 / 3',
-              'Open items': '1',
-            }}
-            isVisible={debateComplete}
-            plantuml={PLANTUML_CODE}
+        {/* Scrollable workspace */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Stat Strip */}
+          <StatStrip isVisible={debateComplete} />
+
+          {/* Query Bar */}
+          <QueryBar
+            ref={queryInputRef}
+            query={query}
+            setQuery={setQuery}
+            onRun={runDebate}
+            isDebating={isDebating}
           />
 
-          {/* ── Agent workspace ── */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* Query Panel — 280px */}
-            <div className="w-[280px] shrink-0">
-              <TranscriptInput
-                query={query}
-                setQuery={setQuery}
-                config={DEBATE_CONFIG}
-                onRun={runDebate}
-                isDebating={isDebating}
-                metrics={metrics}
-              />
-            </div>
+          {/* Consensus Verdict — text only, no UML */}
+          <ConsensusVerdict
+            verdict={VERDICT_TEXT}
+            stats={{ Rounds: '4' }}
+            isVisible={debateComplete}
+          />
 
-            {/* Agent 1 — equal-width flex column */}
-            <div className="flex-1 min-w-0">
-              <AgentCard
-                agentName="Agent 1"
-                type="Business Analyst"
-                confidenceScore={agent1Score}
-                messages={agent1Msgs}
-                color="blue"
-                isDebating={isDebating}
-              />
-            </div>
-
-            {/* Agent 2 — equal-width flex column */}
-            <div className="flex-1 min-w-0">
-              <AgentCard
-                agentName="Agent 2"
-                type="Software Architect"
-                confidenceScore={agent2Score}
-                messages={agent2Msgs}
-                color="emerald"
-                isDebating={isDebating}
-                isLast={true}
-              />
-            </div>
+          {/* Debate Lanes */}
+          <div className="flex-1 grid grid-cols-2 gap-0 px-5 pb-5" style={{ minHeight: 0 }}>
+            <DebateLane
+              agentName="Agent 1"
+              role={config.agent1Role}
+              messages={agent1Msgs}
+              confidenceScore={agent1Score}
+              color="blue"
+              isDebating={isDebating}
+            />
+            <DebateLane
+              agentName="Agent 2"
+              role={config.agent2Role}
+              messages={agent2Msgs}
+              confidenceScore={agent2Score}
+              color="amber"
+              isDebating={isDebating}
+              isLast={true}
+            />
           </div>
         </div>
       </div>
+
+      {/* ── Right Config Panel (320px / 48px) ── */}
+      <ConfigPanel
+        isOpen={configOpen}
+        onToggle={() => setConfigOpen(prev => !prev)}
+        query={query}
+        setQuery={setQuery}
+        config={config}
+        onConfigChange={handleConfigChange}
+        metrics={metrics}
+      />
     </div>
   )
 }

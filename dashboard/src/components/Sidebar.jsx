@@ -1,63 +1,55 @@
-import { Brain, Database, MessageSquare, Terminal, FileText, HelpCircle, Plus } from 'lucide-react'
+import { Brain, Database, MessageSquare, Activity, Plus } from 'lucide-react'
 
 const navItems = [
   { icon: Brain, label: 'Debate Workspace', active: true },
   { icon: Database, label: 'Knowledge Base' },
   { icon: MessageSquare, label: 'Debate History' },
-  { icon: Terminal, label: 'System Logs' },
+  { icon: Activity, label: 'Diagnostics' },
 ]
 
 export default function Sidebar({ onNewDebate, isDebating }) {
   return (
-    <aside className="h-full flex flex-col bg-bg border-r border-border">
-      {/* Header */}
-      <div className="px-5 pt-5 pb-4">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-muted">
-          G-MAD Console
-        </h2>
-        <p className="text-[11px] text-text-dim font-mono mt-1">
-          Session active
-        </p>
+    <aside className="h-full flex flex-col bg-gmad-bg border-r border-gmad-border">
+      {/* Logo */}
+      <div className="px-5 pt-5 pb-6">
+        <div className="flex items-center gap-2.5">
+          <div className="w-[10px] h-[10px] rounded-full bg-gmad-citation shrink-0" />
+          <span className="text-[16px] font-bold text-gmad-text tracking-tight">G-MAD</span>
+        </div>
+        <p className="text-[11px] text-gmad-muted mt-1 ml-[22px]">Debate Engine</p>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 space-y-0.5">
+      <nav className="flex-1 px-3 flex flex-col gap-0.5">
         {navItems.map(({ icon: Icon, label, active }) => (
           <a
             key={label}
             href="#"
-            className={`flex items-center gap-3 px-3 py-2.5 text-[13px] rounded-md transition-colors duration-150
+            className={`flex items-center gap-3 px-3 py-2.5 text-[13px] rounded-lg transition-all duration-150
               ${active
-                ? 'bg-accent-blue-dim text-accent-blue'
-                : 'text-text-dim hover:text-text-muted hover:bg-white/[0.03]'
+                ? 'border-l-2 border-gmad-citation text-gmad-citation bg-gmad-citation-dim font-medium'
+                : 'border-l-2 border-transparent text-gmad-muted hover:text-gmad-text hover:bg-gmad-card'
               }`}
           >
-            <Icon size={15} strokeWidth={1.8} />
+            <Icon size={16} strokeWidth={1.8} />
             {label}
           </a>
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="px-3 pb-5 space-y-3">
+      {/* Bottom */}
+      <div className="px-3 pb-5">
         <button
           onClick={onNewDebate}
           disabled={isDebating}
-          className="w-full py-2.5 bg-accent-blue text-white text-[13px] font-medium rounded-md
+          className="w-full py-2.5 bg-gmad-citation text-white text-[13px] font-semibold rounded-lg
                      flex items-center justify-center gap-2 cursor-pointer
-                     hover:opacity-85 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                     hover:opacity-90 transition-opacity
+                     disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <Plus size={14} strokeWidth={2} />
+          <Plus size={14} strokeWidth={2.5} />
           New Debate
         </button>
-        <div className="space-y-2">
-          <a href="#" className="flex items-center gap-2 text-[11px] text-text-dim hover:text-text-muted transition-colors">
-            <FileText size={12} strokeWidth={1.5} /> Documentation
-          </a>
-          <a href="#" className="flex items-center gap-2 text-[11px] text-text-dim hover:text-text-muted transition-colors">
-            <HelpCircle size={12} strokeWidth={1.5} /> Support
-          </a>
-        </div>
       </div>
     </aside>
   )
