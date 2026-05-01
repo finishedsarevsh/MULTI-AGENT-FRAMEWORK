@@ -3,9 +3,10 @@ import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import StatStrip from './components/StatStrip'
 import QueryBar from './components/QueryBar'
+import ConfigStrip from './components/ConfigStrip'
 import ConsensusVerdict from './components/ConsensusVerdict'
 import DebateLane from './components/DebateLane'
-import ConfigPanel from './components/ConfigPanel'
+import FooterBar from './components/FooterBar'
 
 /* ── Demo Data ── */
 const AGENT_1_MESSAGES = [
@@ -54,19 +55,14 @@ export default function App() {
   const [agent2Msgs, setAgent2Msgs] = useState([])
   const [agent1Score, setAgent1Score] = useState(0)
   const [agent2Score, setAgent2Score] = useState(0)
-  const [configOpen, setConfigOpen] = useState(false)
 
-  const [config, setConfig] = useState({
+  const [config] = useState({
     agent1Role: 'Business Analyst',
     agent2Role: 'Software Architect',
     model: 'llama3',
     maxRounds: 3,
     intent: 'technical',
   })
-
-  const handleConfigChange = useCallback((key, value) => {
-    setConfig(prev => ({ ...prev, [key]: value }))
-  }, [])
 
   const runDebate = useCallback(() => {
     if (isDebating || !query.trim()) return
@@ -116,12 +112,6 @@ export default function App() {
     setTimeout(() => queryInputRef.current?.focus(), 50)
   }, [])
 
-  const metrics = debateComplete ? {
-    iterations: 4,
-    contradictions: 3,
-    openItems: 1,
-  } : null
-
   return (
     <div className="h-screen flex bg-gmad-bg">
       {/* ── Left Sidebar (220px) ── */}
@@ -129,33 +119,36 @@ export default function App() {
         <Sidebar onNewDebate={resetDebate} isDebating={isDebating} />
       </div>
 
-      {/* ── Center Column (flex-1) ── */}
+      {/* ── Main Content (full remaining width) ── */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <TopBar onToggleConfig={() => setConfigOpen(prev => !prev)} />
+        <TopBar />
+
+        {/* Zone 1 — Metrics Row */}
+        <StatStrip isVisible={debateComplete} />
+
+        {/* Zone 2 — Intent / Query Bar */}
+        <QueryBar
+          ref={queryInputRef}
+          query={query}
+          setQuery={setQuery}
+          onRun={runDebate}
+          isDebating={isDebating}
+        />
+
+        {/* Zone 3 — Config Strip */}
+        <ConfigStrip config={config} />
 
         {/* Scrollable workspace */}
-        <div className="flex-1 overflow-y-auto">
-          {/* Stat Strip */}
-          <StatStrip isVisible={debateComplete} />
-
-          {/* Query Bar */}
-          <QueryBar
-            ref={queryInputRef}
-            query={query}
-            setQuery={setQuery}
-            onRun={runDebate}
-            isDebating={isDebating}
-          />
-
-          {/* Consensus Verdict — text only, no UML */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {/* Consensus Verdict */}
           <ConsensusVerdict
             verdict={VERDICT_TEXT}
             stats={{ Rounds: '4' }}
             isVisible={debateComplete}
           />
 
-          {/* Debate Lanes */}
-          <div className="flex-1 grid grid-cols-2 gap-0 px-5 pb-5" style={{ minHeight: 0 }}>
+          {/* Debate Lanes — strict 50/50 split, full width */}
+          <div className="grid grid-cols-2 gap-3 px-5 pb-5" style={{ minHeight: 0 }}>
             <DebateLane
               agentName="Agent 1"
               role={config.agent1Role}
@@ -171,22 +164,13 @@ export default function App() {
               confidenceScore={agent2Score}
               color="amber"
               isDebating={isDebating}
-              isLast={true}
             />
           </div>
         </div>
-      </div>
 
-      {/* ── Right Config Panel (320px / 48px) ── */}
-      <ConfigPanel
-        isOpen={configOpen}
-        onToggle={() => setConfigOpen(prev => !prev)}
-        query={query}
-        setQuery={setQuery}
-        config={config}
-        onConfigChange={handleConfigChange}
-        metrics={metrics}
-      />
+        {/* Footer — RAG Source Relevance */}
+        <FooterBar isVisible={debateComplete} />
+      </div>
     </div>
   )
 }

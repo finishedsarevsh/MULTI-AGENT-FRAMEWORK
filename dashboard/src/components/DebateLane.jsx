@@ -4,7 +4,7 @@ import { FileText } from 'lucide-react'
 
 function SkeletonBlock() {
   return (
-    <div className="space-y-3 p-5">
+    <div className="space-y-3 p-6">
       {[1, 2, 3].map((n) => (
         <div key={n} className="space-y-2">
           <div className="skeleton h-4 w-32 rounded" />
@@ -57,7 +57,7 @@ function JumpNav({ messages, onScrollTo, activeRound }) {
   )
 }
 
-export default function DebateLane({ agentName, role, messages, confidenceScore, color, isDebating, isLast = false }) {
+export default function DebateLane({ agentName, role, messages, confidenceScore, color, isDebating }) {
   const scrollRef = useRef(null)
   const roundRefs = useRef([])
 
@@ -75,7 +75,7 @@ export default function DebateLane({ agentName, role, messages, confidenceScore,
   const showSkeleton = isDebating && messages.length === 0
 
   return (
-    <div className={`flex flex-col h-full bg-gmad-panel rounded-lg border border-gmad-border overflow-hidden ${!isLast ? 'mr-3' : ''}`}>
+    <div className="flex flex-col h-full bg-gmad-panel rounded-lg border border-gmad-border overflow-hidden">
       <div className="px-4 py-3 border-b border-gmad-border shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -96,7 +96,7 @@ export default function DebateLane({ agentName, role, messages, confidenceScore,
       </div>
       <div className="flex-1 overflow-y-auto scroll-smooth" ref={scrollRef}>
         {showSkeleton ? <SkeletonBlock /> : (
-          <div className="p-5 space-y-0">
+          <div className="p-6 space-y-0">
             {messages.map((msg, i) => (
               <div key={i} ref={(el) => (roundRefs.current[i] = el)}>
                 {i > 0 && <div className="border-t border-gmad-border my-0" />}

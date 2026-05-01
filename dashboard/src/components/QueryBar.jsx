@@ -1,8 +1,6 @@
 import { forwardRef } from 'react'
 import { Play, Loader } from 'lucide-react'
 
-const RAG_SOURCES = ['IEEE-2025-security-patterns.pdf', 'Alcubierre 1994']
-
 const QueryBar = forwardRef(function QueryBar({ query, setQuery, onRun, isDebating }, ref) {
   return (
     <div className="px-5 py-3 shrink-0">
@@ -17,14 +15,6 @@ const QueryBar = forwardRef(function QueryBar({ query, setQuery, onRun, isDebati
           className="shrink-0 flex items-center gap-2 px-4 py-2 bg-gmad-citation text-white text-[13px] font-semibold rounded-lg cursor-pointer whitespace-nowrap hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed">
           {isDebating ? (<><Loader size={14} className="animate-spin" />Running...</>) : (<><Play size={14} strokeWidth={2} />Run Debate</>)}
         </button>
-      </div>
-      <div className="flex items-center gap-2 mt-2.5">
-        <span className="text-[11px] text-gmad-muted">Sources:</span>
-        {RAG_SOURCES.map((src) => (
-          <span key={src} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gmad-citation-dim text-gmad-citation text-[11px] font-medium">
-            <span className="w-[5px] h-[5px] rounded-full bg-gmad-citation" />{src}
-          </span>
-        ))}
       </div>
     </div>
   )
