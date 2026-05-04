@@ -7,6 +7,8 @@ import ConfigStrip from './components/ConfigStrip'
 import ConsensusVerdict from './components/ConsensusVerdict'
 import DebateLane from './components/DebateLane'
 import FooterBar from './components/FooterBar'
+import { generatePlantUmlString } from './utils/plantUmlParser'
+import plantumlEncoder from 'plantuml-encoder'
 
 /* ── Demo Data ── */
 const AGENT_1_MESSAGES = [
@@ -45,6 +47,7 @@ const VERDICT_TEXT = `Both agents agree on the following controls for the medica
 /* ── App ── */
 export default function App() {
   const queryInputRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   const [query, setQuery] = useState(
     'Client wants a secure login page for a medical app. Analyze the requirement for contradictions, missing edge cases, and security gaps.'
@@ -55,6 +58,9 @@ export default function App() {
   const [agent2Msgs, setAgent2Msgs] = useState([])
   const [agent1Score, setAgent1Score] = useState(0)
   const [agent2Score, setAgent2Score] = useState(0)
+  const [umlDiagramUrl, setUmlDiagramUrl] = useState(null)
+  const [userTranscript, setUserTranscript] = useState('')
+  const [contextFiles, setContextFiles] = useState([])
 
   const [config] = useState({
     agent1Role: 'Business Analyst',
@@ -109,8 +115,65 @@ export default function App() {
     setAgent2Msgs([])
     setAgent1Score(0)
     setAgent2Score(0)
+    setUmlDiagramUrl(null)
+    setUserTranscript('')
+    setContextFiles([])
+    if (fileInputRef.current) fileInputRef.current.value = ''
     setTimeout(() => queryInputRef.current?.focus(), 50)
   }, [])
+
+  // ── File Handling ──
+  const handleFileChange = (e) => {
+    const newFiles = Array.from(e.target.files)
+    setContextFiles(prev => [...prev, ...newFiles])
+    // Reset the native input so the same file can be re-selected if removed
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const removeFile = (index) => {
+    setContextFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // ── Debate Submission ──
+  const handleDebateSubmit = useCallback(async (e) => {
+    e.preventDefault()
+    if (isDebating || !userTranscript.trim()) return
+
+    setIsDebating(true)
+    setDebateComplete(false)
+    setAgent1Msgs([])
+    setAgent2Msgs([])
+    setAgent1Score(0)
+    setAgent2Score(0)
+    setUmlDiagramUrl(null)
+
+    // Build multipart payload
+    const formData = new FormData()
+    formData.append('transcript', userTranscript)
+    contextFiles.forEach((file) => {
+      formData.append('context_files', file)
+    })
+
+    try {
+      // TODO: Replace with actual FastAPI endpoint
+      // const response = await fetch('http://localhost:8000/api/debate', {
+      //   method: 'POST',
+      //   body: formData,
+      // })
+      // const data = await response.json()
+      // Process data.agent1Messages, data.agent2Messages, data.verdict, data.architecture, etc.
+
+      console.log('[G-MAD] FormData payload built. Transcript length:', userTranscript.length, '| Files:', contextFiles.length)
+      console.log('[G-MAD] Awaiting backend integration...')
+
+      // Simulated delay for UI feedback (remove when backend is wired)
+      await new Promise(resolve => setTimeout(resolve, 2000))
+    } catch (err) {
+      console.error('[G-MAD] Debate submission failed:', err)
+    } finally {
+      setIsDebating(false)
+    }
+  }, [isDebating, userTranscript, contextFiles])
 
   return (
     <div className="h-screen flex bg-gmad-bg">
@@ -140,12 +203,116 @@ export default function App() {
 
         {/* Scrollable workspace */}
         <div className="flex-1 overflow-y-auto min-h-0">
+          {/* ── Intake Form: Requirements + File Upload ── */}
+          <form
+            id="debate-intake-form"
+            onSubmit={handleDebateSubmit}
+            className="relative z-10 mx-5 mt-4 mb-4 rounded-lg border border-gmad-border bg-gmad-card p-5"
+          >
+            <p className="text-[11px] font-bold uppercase tracking-widest text-gmad-muted mb-3">
+              📥 Ingest Requirements
+            </p>
+
+            {/* Textarea */}
+            <textarea
+              id="transcript-input"
+              value={userTranscript}
+              onChange={(e) => setUserTranscript(e.target.value)}
+              placeholder="Paste your system requirements, meeting transcript, or feature specification here…"
+              rows={6}
+              className="w-full rounded-md border border-gmad-border bg-gmad-bg text-gmad-text text-[14px] leading-relaxed p-3 resize-y focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 placeholder:text-gmad-muted/50 transition-colors"
+            />
+
+            {/* File Upload Row */}
+            <div className="mt-3 flex items-center gap-3 flex-wrap">
+              <label
+                htmlFor="file-upload-input"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-dashed border-gmad-border text-gmad-muted text-[13px] cursor-pointer hover:border-blue-500 hover:text-blue-400 transition-colors"
+              >
+                📄 Attach PDFs
+                <input
+                  ref={fileInputRef}
+                  id="file-upload-input"
+                  type="file"
+                  accept=".pdf"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </label>
+
+              {/* File Chips */}
+              {contextFiles.map((file, i) => (
+                <span
+                  key={`${file.name}-${i}`}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[11px] font-mono font-medium"
+                >
+                  📄 {file.name}
+                  <button
+                    type="button"
+                    onClick={() => removeFile(i)}
+                    className="ml-1 text-blue-300 hover:text-red-400 transition-colors font-bold text-[13px] leading-none cursor-pointer"
+                    aria-label={`Remove ${file.name}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+
+            {/* Submit Button */}
+            <div className="mt-4 flex items-center gap-3">
+              <button
+                id="run-debate-btn"
+                type="submit"
+                disabled={isDebating || !userTranscript.trim()}
+                className="px-6 py-2.5 rounded-md text-sm font-semibold shadow transition-all cursor-pointer
+                           bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white
+                           disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-500"
+              >
+                {isDebating ? 'Processing…' : '🚀 Run Multi-Agent Debate'}
+              </button>
+              {isDebating && (
+                <span className="text-[12px] text-gmad-muted animate-pulse">
+                  Agents are deliberating…
+                </span>
+              )}
+            </div>
+          </form>
+
+          {/* ── Loading Spinner Overlay ── */}
+          {isDebating && (
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+              <div className="w-10 h-10 border-[3px] border-gmad-border border-t-blue-500 rounded-full animate-spin" />
+              <p className="text-[13px] text-gmad-muted">Running multi-agent debate…</p>
+            </div>
+          )}
+
           {/* Consensus Verdict */}
           <ConsensusVerdict
             verdict={VERDICT_TEXT}
             stats={{ Rounds: '4' }}
             isVisible={debateComplete}
           />
+
+          {/* ── UML Architecture Diagram ── */}
+          {umlDiagramUrl && (
+            <div
+              className="relative z-10 mx-5 mb-4 rounded-lg border border-gmad-border bg-gmad-card overflow-auto"
+              style={{ padding: '1rem' }}
+            >
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gmad-muted mb-3">
+                🏗 Architecture Diagram (PlantUML)
+              </p>
+              <img
+                id="uml-diagram-img"
+                src={umlDiagramUrl}
+                alt="System Architecture Diagram"
+                className="max-w-full h-auto block mx-auto"
+                style={{ minHeight: '120px' }}
+              />
+            </div>
+          )}
 
           {/* Debate Lanes — strict 50/50 split, full width */}
           <div className="grid grid-cols-2 gap-3 px-5 pb-5" style={{ minHeight: 0 }}>
