@@ -5,8 +5,9 @@ Accepts multipart/form-data payloads from the React frontend:
   - transcript (str):  Unstructured requirements / meeting transcript
   - files (List[UploadFile]):  Optional PDF context documents
 
-Saves uploaded files to ./data/ and returns a mock G-MAD architecture
-payload until the AI debate pipeline is wired in.
+Saves uploaded files to ./data/, extracts PDF text, and invokes the
+LangGraph multi-agent debate engine to produce an AI-generated
+architecture payload.
 """
 
 from __future__ import annotations
@@ -18,6 +19,9 @@ from typing import List
 import aiofiles
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+
+from engine.graph import gmad_app
+from utils.pdf_extractor import extract_text_from_pdf
 
 # ── App Init ──────────────────────────────────────────────────────────
 app = FastAPI(
@@ -67,12 +71,15 @@ async def run_debate(
     Accepts the user's requirements transcript and optional PDF context files.
 
     1. Saves each uploaded file to ./data/
-    2. Returns a mock G-MAD architecture payload (to be replaced with AI pipeline)
+    2. Extracts text from PDFs via PyMuPDF
+    3. Invokes the LangGraph multi-agent debate engine
+    4. Returns the AI-generated architecture payload
     """
 
     saved_files: list[str] = []
+    extracted_texts: list[dict[str, str]] = []
 
-    # ── Save uploaded files ──
+    # ── Save uploaded files & extract text ──
     for upload in context_files:
         if upload.filename:
             dest = DATA_DIR / upload.filename
@@ -81,47 +88,56 @@ async def run_debate(
                 await f.write(content)
             saved_files.append(upload.filename)
 
+            # ── PDF Text Extraction ──
+            if upload.filename.lower().endswith(".pdf"):
+                text = extract_text_from_pdf(str(dest))
+                extracted_texts.append(
+                    {"filename": upload.filename, "text": text}
+                )
+                # Verification: print first 500 chars to terminal
+                preview = text[:500] if text else "<no text extracted>"
+                print(
+                    f"[G-MAD] PDF Preview ({upload.filename}):\n"
+                    f"{preview}\n{'─' * 60}"
+                )
+
     # ── Log receipt ──
     print(f"[G-MAD] Received transcript ({len(transcript)} chars)")
     print(f"[G-MAD] Saved {len(saved_files)} file(s): {saved_files}")
+    print(f"[G-MAD] Extracted text from {len(extracted_texts)} PDF(s)")
 
-    # ── Mock Response (replace with AI debate pipeline) ──
-    mock_architecture = {
-        "systemName": "Generated Architecture",
-        "components": [
-            {"id": "clientUI", "name": "React Frontend Dashboard"},
-            {"id": "apiGateway", "name": "FastAPI Gateway"},
-            {"id": "debateEngine", "name": "Multi-Agent Debate Engine"},
-            {"id": "vectorDB", "name": "ChromaDB Vector Store"},
-            {"id": "llmService", "name": "Llama 3 LLM Service"},
-        ],
-        "relationships": [
-            {
-                "source": "clientUI",
-                "target": "apiGateway",
-                "description": "Sends requirements transcript",
-            },
-            {
-                "source": "apiGateway",
-                "target": "debateEngine",
-                "description": "Triggers multi-agent debate",
-            },
-            {
-                "source": "debateEngine",
-                "target": "llmService",
-                "description": "Queries LLM for agent responses",
-            },
-            {
-                "source": "debateEngine",
-                "target": "vectorDB",
-                "description": "Retrieves grounding context (RAG)",
-            },
-        ],
+    # ── Combine extracted PDF texts ──
+    combined_pdf_text = "\n".join(
+        entry["text"] for entry in extracted_texts if entry["text"]
+    )
+
+    # ── Invoke LangGraph Debate Engine ──
+    print(f"[G-MAD] Invoking debate engine...")
+    initial_state = {
+        "transcript": transcript,
+        "pdf_context": combined_pdf_text,
+        "current_draft": {},
+        "debate_history": [],
+        "iteration_count": 0,
+        "consensus_reached": False,
     }
 
+    final_state = gmad_app.invoke(initial_state)
+
+    print(
+        f"[G-MAD] Debate complete: "
+        f"{final_state['iteration_count']} round(s), "
+        f"consensus={'YES' if final_state['consensus_reached'] else 'NO'}"
+    )
+
+    # ── Return AI-generated payload ──
     return {
         "status": "success",
         "transcript_length": len(transcript),
         "files_saved": saved_files,
-        "architecture": mock_architecture,
+        "pdf_extractions": len(extracted_texts),
+        "debate_rounds": final_state["iteration_count"],
+        "consensus_reached": final_state["consensus_reached"],
+        "debate_history": final_state["debate_history"],
+        "architecture": final_state["current_draft"],
     }
