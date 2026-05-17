@@ -2,9 +2,10 @@ import { Brain, Database, MessageSquare, Activity, Plus } from 'lucide-react'
 
 const navItems = [
   { icon: Brain, label: 'Debate Workspace', active: true },
-  { icon: Database, label: 'Knowledge Base' },
-  { icon: MessageSquare, label: 'Debate History' },
-  { icon: Activity, label: 'Diagnostics' },
+  // Phase 2 – uncomment when features are implemented:
+  // { icon: Database, label: 'Knowledge Base' },
+  // { icon: MessageSquare, label: 'Debate History' },
+  // { icon: Activity, label: 'Diagnostics' },
 ]
 
 export default function Sidebar({ onNewDebate, isDebating }) {

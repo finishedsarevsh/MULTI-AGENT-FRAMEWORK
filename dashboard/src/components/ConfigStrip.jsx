@@ -21,8 +21,8 @@ export default function ConfigStrip({ config }) {
       <ConfigEntry label="Agent 1:" value={config.agent1Role} />
       <span className="text-gmad-border">│</span>
       <ConfigEntry label="Agent 2:" value={config.agent2Role} />
-      <span className="text-gmad-border">│</span>
-      <ConfigEntry label="Model:" value={config.model} />
+
+      {/* Phase 2 – re-enable when RAG is fully wired:
       <span className="text-gmad-border">│</span>
       <ConfigEntry label="RAG:" value={
         <span className="inline-flex items-center gap-1">
@@ -30,6 +30,7 @@ export default function ConfigStrip({ config }) {
           chroma_db
         </span>
       } />
+      */}
       <span className="text-gmad-border">│</span>
       <ConfigEntry label="Max Rounds:" value={config.maxRounds} />
     </motion.div>

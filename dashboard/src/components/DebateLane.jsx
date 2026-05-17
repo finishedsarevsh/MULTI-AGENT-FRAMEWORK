@@ -57,7 +57,7 @@ function JumpNav({ messages, onScrollTo, activeRound }) {
   )
 }
 
-export default function DebateLane({ agentName, role, messages, confidenceScore, color, isDebating }) {
+export default function DebateLane({ agentName, role, messages, confidenceScore, color, isDebating, isDraftLane }) {
   const scrollRef = useRef(null)
   const roundRefs = useRef([])
 
@@ -88,9 +88,19 @@ export default function DebateLane({ agentName, role, messages, confidenceScore,
             </div>
           </div>
           <div className="flex items-center gap-4">
-            {messages.length > 0 && <span className="text-[11px] text-gmad-muted font-mono">{messages.length} rounds</span>}
+            {isDraftLane ? (
+              messages.length > 0 && (
+                <span className={`px-2.5 py-1 text-[10px] font-bold font-mono rounded-full ${roundBg} ${roundAccent} border ${roundBorder}`}>
+                  Final Spec
+                </span>
+              )
+            ) : (
+              <>
+                {messages.length > 0 && <span className="text-[11px] text-gmad-muted font-mono">{messages.length} rounds</span>}
+                <JumpNav messages={messages} onScrollTo={handleScrollTo} activeRound={messages.length - 1} />
+              </>
+            )}
             <AgreementBar score={confidenceScore} color={color} />
-            <JumpNav messages={messages} onScrollTo={handleScrollTo} activeRound={messages.length - 1} />
           </div>
         </div>
       </div>

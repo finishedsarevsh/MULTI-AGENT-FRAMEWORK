@@ -6,10 +6,7 @@ export default function TopBar() {
         <span className="text-gmad-muted/50">/</span>
         <span className="text-gmad-text font-medium">Active Debate</span>
       </div>
-      <div className="flex items-center gap-2">
-        <div className="w-[7px] h-[7px] rounded-full bg-gmad-success animate-pulse" />
-        <span className="text-[12px] text-gmad-muted">Ollama connected</span>
-      </div>
+
     </header>
   )
 }

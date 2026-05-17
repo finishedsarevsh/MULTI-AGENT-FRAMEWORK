@@ -65,7 +65,7 @@ export default function ConsensusVerdict({ verdict, stats, isVisible }) {
               </span>
             </div>
             <span className="text-[11px] text-gmad-muted">
-              Synthesised from 2 agents · {stats.Rounds} rounds · 2 RAG sources
+              Synthesised from 2 agents · {stats.Rounds} rounds · {stats.ragSources} RAG sources
             </span>
           </div>
 

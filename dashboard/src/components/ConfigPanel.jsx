@@ -28,16 +28,17 @@ function SourceItem({ filename, relevance }) {
 }
 
 const ConfigPanel = memo(function ConfigPanel({ isOpen, onToggle, query, setQuery, config, onConfigChange, metrics }) {
-  const [tokens, setTokens] = useState(1024)
-  const [latency, setLatency] = useState(42)
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setTokens(prev => Math.min(8000, Math.max(900, jitter(prev, 64))))
-      setLatency(jitter(43, 5))
-    }, 3000)
-    return () => clearInterval(id)
-  }, [])
+  // Phase 2 – re-enable when real telemetry is wired:
+  // const [tokens, setTokens] = useState(1024)
+  // const [latency, setLatency] = useState(42)
+  //
+  // useEffect(() => {
+  //   const id = setInterval(() => {
+  //     setTokens(prev => Math.min(8000, Math.max(900, jitter(prev, 64))))
+  //     setLatency(jitter(43, 5))
+  //   }, 3000)
+  //   return () => clearInterval(id)
+  // }, [])
 
   return (
     <div className={`config-panel shrink-0 h-full border-l border-gmad-border bg-gmad-panel flex flex-col overflow-hidden ${isOpen ? 'w-[320px]' : 'w-[48px]'}`}>
@@ -60,11 +61,13 @@ const ConfigPanel = memo(function ConfigPanel({ isOpen, onToggle, query, setQuer
             <label className="block text-[11px] font-medium text-gmad-muted mb-1.5">Requirement Under Analysis</label>
             <textarea value={query} onChange={(e) => setQuery(e.target.value)} rows={4} placeholder="Enter the software requirement..."
               className="w-full p-3 bg-gmad-bg border border-gmad-border rounded-lg text-[13px] leading-[1.5] text-gmad-text placeholder:text-gmad-muted/50 resize-none focus:outline-none focus:border-gmad-citation/40 transition-colors" />
+            {/* Phase 2 – re-enable when real telemetry is wired:
             <div className="flex items-center gap-2 mt-3 flex-wrap">
               <MiniStat icon={Cpu} label="VRAM" value="4.2 / 12 GB" iconColor="text-gmad-agent1" />
               <MiniStat icon={Zap} label="Tokens" value={`${tokens.toLocaleString()} / 8k`} iconColor="text-gmad-success" />
               <MiniStat icon={Activity} label="Latency" value={`${latency}ms`} iconColor="text-gmad-warning" />
             </div>
+            */}
           </div>
 
           <div>
@@ -90,6 +93,7 @@ const ConfigPanel = memo(function ConfigPanel({ isOpen, onToggle, query, setQuer
                   <option value="phi3">phi3</option>
                 </select>
               </div>
+              {/* Phase 2 – re-enable when RAG is fully wired:
               <div>
                 <label className="block text-[11px] text-gmad-muted mb-1">RAG Source</label>
                 <div className="px-3 py-2 bg-gmad-bg border border-gmad-border rounded-lg">
@@ -98,6 +102,7 @@ const ConfigPanel = memo(function ConfigPanel({ isOpen, onToggle, query, setQuer
                   </span>
                 </div>
               </div>
+              */}
               <div>
                 <label className="block text-[11px] text-gmad-muted mb-1">Max Rounds</label>
                 <div className="flex items-center gap-2">

@@ -1,17 +1,11 @@
 import { useState, useEffect, memo } from 'react'
 import { motion } from 'framer-motion'
-import { Cpu, Zap, Activity } from 'lucide-react'
+// Phase 2 – re-enable when real telemetry is wired:
+// import { Cpu, Zap, Activity } from 'lucide-react'
 
 function jitter(base, range) {
   return base + Math.floor(Math.random() * range * 2) - range
 }
-
-const VITALS = [
-  { key: 'rounds', value: '4', label: 'Rounds Completed', color: 'text-gmad-info' },
-  { key: 'contradictions', value: '3', label: 'Contradictions Found', color: 'text-gmad-error' },
-  { key: 'resolved', value: '3/3', label: 'Contradictions Resolved', color: 'text-gmad-success' },
-  { key: 'open', value: '1', label: 'Open Items', color: 'text-gmad-warning' },
-]
 
 function TelemetryChip({ icon: Icon, label, value, iconColor }) {
   return (
@@ -23,17 +17,24 @@ function TelemetryChip({ icon: Icon, label, value, iconColor }) {
   )
 }
 
-const StatStrip = memo(function StatStrip({ isVisible }) {
-  const [tokens, setTokens] = useState(1024)
-  const [latency, setLatency] = useState(42)
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setTokens(prev => Math.min(8000, Math.max(900, jitter(prev, 64))))
-      setLatency(jitter(43, 5))
-    }, 3000)
-    return () => clearInterval(id)
-  }, [])
+const StatStrip = memo(function StatStrip({ isVisible, stats = {} }) {
+  const dynamicVitals = [
+    { key: 'rounds', value: String(stats.rounds || 0), label: 'Rounds Completed', color: 'text-gmad-info' },
+    { key: 'sources', value: String(stats.ragSources || 0), label: 'Context Sources', color: 'text-gmad-success' },
+    { key: 'contradictions', value: '0', label: 'Contradictions (Stub)', color: 'text-gmad-error' },
+    { key: 'open', value: '0', label: 'Open Items (Stub)', color: 'text-gmad-warning' },
+  ]
+  // Phase 2 – re-enable when real telemetry is wired:
+  // const [tokens, setTokens] = useState(1024)
+  // const [latency, setLatency] = useState(42)
+  //
+  // useEffect(() => {
+  //   const id = setInterval(() => {
+  //     setTokens(prev => Math.min(8000, Math.max(900, jitter(prev, 64))))
+  //     setLatency(jitter(43, 5))
+  //   }, 3000)
+  //   return () => clearInterval(id)
+  // }, [])
 
   if (!isVisible) return null
 
@@ -42,11 +43,11 @@ const StatStrip = memo(function StatStrip({ isVisible }) {
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="flex items-center justify-between px-5 py-3 shrink-0"
+      className="flex items-center justify-center px-5 py-3 shrink-0"
     >
       {/* Left — Debate Vitals */}
       <div className="flex items-center gap-3">
-        {VITALS.map((card, i) => (
+        {dynamicVitals.map((card, i) => (
           <motion.div
             key={card.key}
             initial={{ opacity: 0, scale: 0.95 }}
@@ -64,7 +65,7 @@ const StatStrip = memo(function StatStrip({ isVisible }) {
         ))}
       </div>
 
-      {/* Right — System Telemetry */}
+      {/* Phase 2 – System Telemetry (commented out for academic integrity)
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -78,6 +79,7 @@ const StatStrip = memo(function StatStrip({ isVisible }) {
         <div className="w-px h-3 bg-gmad-border" />
         <TelemetryChip icon={Activity} label="Latency" value={`${latency}ms`} iconColor="text-gmad-warning" />
       </motion.div>
+      */}
     </motion.div>
   )
 })

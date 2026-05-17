@@ -12,6 +12,7 @@ architecture payload.
 
 from __future__ import annotations
 
+import asyncio
 import os
 from pathlib import Path
 from typing import List
@@ -66,7 +67,7 @@ async def root():
 async def run_debate(
     transcript: str = Form(...),
     context_files: List[UploadFile] = File(default=[]),
-):
+): 
     """
     Accepts the user's requirements transcript and optional PDF context files.
 
@@ -75,6 +76,7 @@ async def run_debate(
     3. Invokes the LangGraph multi-agent debate engine
     4. Returns the AI-generated architecture payload
     """
+    print("AAAAAA THE ENDPOINT WAS HIT!")
 
     saved_files: list[str] = []
     extracted_texts: list[dict[str, str]] = []
@@ -82,22 +84,24 @@ async def run_debate(
     # ── Save uploaded files & extract text ──
     for upload in context_files:
         if upload.filename:
-            dest = DATA_DIR / upload.filename
+            # Prevent path traversal by extracting the file name component
+            safe_filename = Path(upload.filename).name
+            dest = DATA_DIR / safe_filename
             async with aiofiles.open(dest, "wb") as f:
                 content = await upload.read()
                 await f.write(content)
-            saved_files.append(upload.filename)
+            saved_files.append(safe_filename)
 
             # ── PDF Text Extraction ──
-            if upload.filename.lower().endswith(".pdf"):
+            if safe_filename.lower().endswith(".pdf"):
                 text = extract_text_from_pdf(str(dest))
                 extracted_texts.append(
-                    {"filename": upload.filename, "text": text}
+                    {"filename": safe_filename, "text": text}
                 )
                 # Verification: print first 500 chars to terminal
                 preview = text[:500] if text else "<no text extracted>"
                 print(
-                    f"[G-MAD] PDF Preview ({upload.filename}):\n"
+                    f"[G-MAD] PDF Preview ({safe_filename}):\n"
                     f"{preview}\n{'─' * 60}"
                 )
 
@@ -118,11 +122,12 @@ async def run_debate(
         "pdf_context": combined_pdf_text,
         "current_draft": {},
         "debate_history": [],
+        "analyst_critiques": [],
         "iteration_count": 0,
         "consensus_reached": False,
     }
 
-    final_state = gmad_app.invoke(initial_state)
+    final_state = await asyncio.to_thread(gmad_app.invoke, initial_state)
 
     print(
         f"[G-MAD] Debate complete: "
@@ -139,5 +144,7 @@ async def run_debate(
         "debate_rounds": final_state["iteration_count"],
         "consensus_reached": final_state["consensus_reached"],
         "debate_history": final_state["debate_history"],
+        "analyst_critiques": final_state.get("analyst_critiques", []),
         "architecture": final_state["current_draft"],
+        "react_prototype": final_state.get("react_prototype", ""),
     }
