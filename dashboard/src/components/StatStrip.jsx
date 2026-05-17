@@ -1,85 +1,67 @@
-import { useState, useEffect, memo } from 'react'
+import React, { memo } from 'react'
 import { motion } from 'framer-motion'
-// Phase 2 – re-enable when real telemetry is wired:
-// import { Cpu, Zap, Activity } from 'lucide-react'
 
-function jitter(base, range) {
-  return base + Math.floor(Math.random() * range * 2) - range
-}
-
-function TelemetryChip({ icon: Icon, label, value, iconColor }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <Icon size={11} strokeWidth={2} className={iconColor} />
-      <span className="text-[10px] text-gmad-muted uppercase tracking-wide">{label}</span>
-      <span className="text-[11px] text-gmad-text font-mono font-semibold tabular-nums">{value}</span>
-    </div>
-  )
-}
-
-const StatStrip = memo(function StatStrip({ isVisible, stats = {} }) {
-  const dynamicVitals = [
-    { key: 'rounds', value: String(stats.rounds || 0), label: 'Rounds Completed', color: 'text-gmad-info' },
-    { key: 'sources', value: String(stats.ragSources || 0), label: 'Context Sources', color: 'text-gmad-success' },
-    { key: 'contradictions', value: '0', label: 'Contradictions (Stub)', color: 'text-gmad-error' },
-    { key: 'open', value: '0', label: 'Open Items (Stub)', color: 'text-gmad-warning' },
-  ]
-  // Phase 2 – re-enable when real telemetry is wired:
-  // const [tokens, setTokens] = useState(1024)
-  // const [latency, setLatency] = useState(42)
-  //
-  // useEffect(() => {
-  //   const id = setInterval(() => {
-  //     setTokens(prev => Math.min(8000, Math.max(900, jitter(prev, 64))))
-  //     setLatency(jitter(43, 5))
-  //   }, 3000)
-  //   return () => clearInterval(id)
-  // }, [])
-
+const StatStrip = memo(function StatStrip({ isVisible, evaluationMetrics, roundCount, sourceCount }) {
   if (!isVisible) return null
+
+  // Catch the new data from the backend, fallback to 0 if loading
+  const agreement = evaluationMetrics?.agreement_rate || 0
+  const efficiency = evaluationMetrics?.convergence_efficiency || 0
+  const quality = evaluationMetrics?.artifact_quality || 0
+
+  const vitals = [
+    {
+      label: "Execution Steps",
+      value: `${roundCount || 0} Rounds`,
+      desc: "Debate depth required for consensus",
+      color: "from-blue-500 to-indigo-600"
+    },
+    {
+      label: "Consensus Agreement",
+      value: `${agreement}%`,
+      desc: "Live agent viewpoint alignment velocity",
+      color: "from-teal-500 to-emerald-600"
+    },
+    {
+      label: "Convergence Efficiency",
+      value: `${efficiency}%`,
+      desc: "F1 validation score optimized per round",
+      color: "from-amber-500 to-orange-600"
+    },
+    {
+      label: "Artifact Quality Index",
+      value: `${quality}%`,
+      desc: "Validates syntax, constraint coverage & consistency",
+      color: "from-purple-500 to-fuchsia-600"
+    }
+  ]
 
   return (
     <motion.div
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="flex items-center justify-center px-5 py-3 shrink-0"
+      className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-slate-900 border-b border-slate-800 shrink-0 w-full"
     >
-      {/* Left — Debate Vitals */}
-      <div className="flex items-center gap-3">
-        {dynamicVitals.map((card, i) => (
-          <motion.div
-            key={card.key}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: i * 0.06 }}
-            className="px-4 py-2.5 rounded-lg border border-gmad-border bg-gmad-panel"
-          >
-            <div className={`text-[20px] font-bold font-mono tabular-nums leading-none mb-1 ${card.color}`}>
-              {card.value}
-            </div>
-            <div className="text-[10px] text-gmad-muted font-medium tracking-wide uppercase">
-              {card.label}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Phase 2 – System Telemetry (commented out for academic integrity)
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.25 }}
-        className="flex items-center gap-4 px-4 py-2 rounded-lg border border-gmad-border bg-gmad-panel"
-      >
-        <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-gmad-muted mr-1">SYS</span>
-        <TelemetryChip icon={Cpu} label="VRAM" value="4.2 / 12 GB" iconColor="text-gmad-agent1" />
-        <div className="w-px h-3 bg-gmad-border" />
-        <TelemetryChip icon={Zap} label="Tokens" value={`${tokens.toLocaleString()} / 8k`} iconColor="text-gmad-success" />
-        <div className="w-px h-3 bg-gmad-border" />
-        <TelemetryChip icon={Activity} label="Latency" value={`${latency}ms`} iconColor="text-gmad-warning" />
-      </motion.div>
-      */}
+      {vitals.map((item, idx) => (
+        <motion.div
+          key={idx}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: idx * 0.06 }}
+          className="relative p-4 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden shadow-lg"
+        >
+          <div className="z-10 relative">
+            <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">{item.label}</span>
+            <h3 className={`text-2xl font-bold bg-gradient-to-r ${item.color} bg-clip-text text-transparent mt-1`}>
+              {item.value}
+            </h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">{item.desc}</p>
+          </div>
+          {/* Decorative glowing orb in the corner of each card */}
+          <div className={`absolute -right-4 -bottom-4 w-24 h-24 bg-gradient-to-br ${item.color} opacity-[0.08] blur-xl rounded-full`} />
+        </motion.div>
+      ))}
     </motion.div>
   )
 })

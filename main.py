@@ -21,7 +21,7 @@ import aiofiles
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from engine.graph import gmad_app
+from engine.graph import gmad_app, calculate_debate_metrics
 from utils.pdf_extractor import extract_text_from_pdf
 
 # ── App Init ──────────────────────────────────────────────────────────
@@ -135,6 +135,8 @@ async def run_debate(
         f"consensus={'YES' if final_state['consensus_reached'] else 'NO'}"
     )
 
+    evaluation_metrics = calculate_debate_metrics(final_state)
+
     # ── Return AI-generated payload ──
     return {
         "status": "success",
@@ -147,4 +149,5 @@ async def run_debate(
         "analyst_critiques": final_state.get("analyst_critiques", []),
         "architecture": final_state["current_draft"],
         "react_prototype": final_state.get("react_prototype", ""),
+        "evaluation": evaluation_metrics,
     }

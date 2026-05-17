@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import StatStrip from './components/StatStrip'
+import EvaluationPanel from './components/EvaluationPanel'
 import QueryBar from './components/QueryBar'
 import ConfigStrip from './components/ConfigStrip'
 import ConsensusVerdict from './components/ConsensusVerdict'
@@ -31,6 +32,7 @@ export default function App() {
   const [verdictText, setVerdictText] = useState('')
   const [debateError, setDebateError] = useState(null)
   const [debateRounds, setDebateRounds] = useState(0)
+  const [evaluationMetrics, setEvaluationMetrics] = useState(null)
 
   const [config] = useState({
     agent1Role: 'Software Architect',
@@ -150,6 +152,7 @@ export default function App() {
         setAgent1Score(data.consensus_reached ? 92 : 70)
         setAgent2Score(data.consensus_reached ? 88 : 65)
         setDebateRounds(data.debate_rounds || 0)
+        if (data.evaluation) setEvaluationMetrics(data.evaluation)
 
         // ── Verdict ──
         const lastCritique = analystMsgs.length > 0 ? analystMsgs[analystMsgs.length - 1].text.slice(0, 300) : ''
@@ -204,10 +207,12 @@ export default function App() {
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <TopBar />
 
-        {/* Zone 1 — Metrics Row */}
+        {/* Zone 1 — Metrics Row (legacy cards) */}
         <StatStrip 
-          isVisible={debateComplete} 
-          stats={{ rounds: debateRounds, ragSources: contextFiles.length }} 
+          isVisible={debateComplete}
+          evaluationMetrics={evaluationMetrics}
+          roundCount={debateRounds}
+          sourceCount={contextFiles.length}
         />
 
         {/* Zone 2 — Unified Smart Input */}
@@ -249,6 +254,13 @@ export default function App() {
             verdict={verdictText}
             stats={{ Rounds: String(debateRounds), ragSources: contextFiles.length }}
             isVisible={debateComplete}
+          />
+
+          {/* Research-Grade Evaluation Panel */}
+          <EvaluationPanel
+            isVisible={debateComplete}
+            evaluationMetrics={evaluationMetrics}
+            roundCount={debateRounds}
           />
 
           {/* ── UML Architecture Diagram ── */}
